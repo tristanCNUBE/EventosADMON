@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eventos · Posada Señorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#221C16;
+    --parchment:#F3EAD9;
+    --hueso:#FFFCF6;
+    --cantera:#B5602F;
+    --cantera-dark:#8F4A21;
+    --musgo:#56624A;
+    --piedra:#DCD0B8;
+    --muted:#6b6053;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Public Sans',sans-serif;
+    background:var(--parchment);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif; margin:0;}
+  [hidden]{display:none !important;}
+
+  /* ---------- PIN GATE ---------- */
+  .gate{
+    position:fixed; inset:0; background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; z-index:100;
+  }
+  .gate-card{
+    background:var(--hueso); width:100%; max-width:380px;
+    border-radius:6px; padding:48px 40px; text-align:center;
+    border-top:3px solid var(--cantera);
+    box-shadow:0 40px 90px rgba(0,0,0,.45);
+  }
+  .gate-eyebrow{
+    text-transform:uppercase; letter-spacing:.16em; font-size:11px;
+    color:var(--cantera); font-weight:600; margin:0 0 10px;
+  }
+  .gate-title{font-size:28px; font-weight:500; margin-bottom:10px;}
+  .gate-sub{font-size:14px; color:var(--muted); line-height:1.55; margin-bottom:28px;}
+  .gate-input{
+    width:100%; font-family:'JetBrains Mono',monospace; font-size:24px;
+    letter-spacing:.4em; text-align:center; padding:14px 10px;
+    border:1.5px solid var(--piedra); border-radius:5px;
+    background:var(--parchment); color:var(--ink); margin-bottom:16px;
+  }
+  .gate-input:focus{outline:none; border-color:var(--cantera);}
+  .gate-btn{width:100%;}
+  .gate-error{color:#a3342f; font-size:13px; margin:14px 0 0;}
+  .gate-salones{
+    margin-top:30px; padding-top:18px; border-top:1px solid var(--piedra);
+    font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--piedra); line-height:2; filter:saturate(0.6);
+  }
+
+  /* ---------- APP SHELL ---------- */
+  .app{display:flex; min-height:100vh;}
+  .sidebar{
+    width:264px; flex-shrink:0; background:var(--ink); color:var(--parchment);
+    padding:36px 26px; display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .brand-eyebrow{
+    text-transform:uppercase; font-size:10px; letter-spacing:.18em;
+    color:var(--cantera); font-weight:600; margin-bottom:6px;
+  }
+  .brand-title{font-size:27px; font-weight:500; line-height:1.1;}
+  .nav{margin-top:52px; display:flex; flex-direction:column; gap:4px;}
+  .nav-item{
+    all:unset; cursor:pointer; padding:13px 15px; border-radius:5px;
+    font-size:14px; font-weight:500; color:#cabba2; transition:background .15s,color .15s;
+  }
+  .nav-item:hover{background:rgba(255,255,255,.07); color:var(--parchment);}
+  .nav-item.active{background:var(--cantera); color:var(--hueso);}
+  .nav-item:focus-visible{outline:2px solid var(--cantera); outline-offset:2px;}
+  .sidebar-foot{
+    margin-top:auto; padding-top:22px; border-top:1px solid rgba(255,255,255,.14);
+    font-size:11px; color:#8c7f6b; text-transform:uppercase; letter-spacing:.08em;
+  }
+  .salones-list{
+    font-family:'JetBrains Mono',monospace; line-height:2; margin-top:10px;
+    font-size:10.5px; letter-spacing:.02em; text-transform:none; color:#9a8e76;
+  }
+
+  .main{flex:1; padding:52px 60px; max-width:1000px;}
+  .section-head{margin-bottom:38px;}
+  .eyebrow{
+    text-transform:uppercase; font-size:11px; letter-spacing:.16em;
+    color:var(--cantera); font-weight:600; margin-bottom:12px;
+  }
+  .section-head h2{font-size:36px; font-weight:500; margin-bottom:12px;}
+  .section-sub{color:var(--muted); font-size:15px; max-width:580px; line-height:1.6;}
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+
+  .card{
+    background:var(--hueso); border:1px solid var(--piedra);
+    border-radius:6px; padding:30px;
+  }
+  .card h3{font-size:18px; font-weight:500; margin-bottom:9px;}
+  .card-text{font-size:13.5px; color:var(--muted); margin-bottom:20px; line-height:1.55;}
+
+  .btn{
+    all:unset; cursor:pointer; display:inline-block; padding:13px 24px;
+    font-family:'Public Sans',sans-serif; font-size:13.5px; font-weight:600;
+    border-radius:5px; text-align:center; transition:background .15s;
+  }
+  .btn-primary{background:var(--cantera); color:var(--hueso);}
+  .btn-primary:hover:not(:disabled){background:var(--cantera-dark);}
+  .btn-primary:disabled{background:var(--piedra); color:#9a8e76; cursor:not-allowed;}
+  .btn:focus-visible{outline:2px solid var(--musgo); outline-offset:2px;}
+
+  .input{
+    width:100%; padding:12px 14px; border:1.5px solid var(--piedra);
+    border-radius:5px; font-family:'Public Sans',sans-serif; font-size:14px;
+    margin-bottom:12px; background:#fff; color:var(--ink);
+  }
+  .input:focus{outline:none; border-color:var(--cantera);}
+
+  .field-label{
+    display:block; text-transform:uppercase; font-size:11px; letter-spacing:.08em;
+    color:var(--muted); font-weight:600; margin-bottom:8px;
+  }
+  select.input{
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b6053' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center; padding-right:36px;
+    cursor:pointer;
+  }
+  .lead-list{
+    max-height:230px; overflow-y:auto; margin-bottom:14px;
+    border:1px solid var(--piedra); border-radius:5px; display:none;
+  }
+  .lead-list.show{display:block;}
+  .lead-item{padding:11px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--parchment);}
+  .lead-item:last-child{border-bottom:none;}
+  .lead-item:hover, .lead-item.selected{background:var(--parchment);}
+  .li-titular{font-weight:600;}
+  .li-meta{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:3px;}
+  .lead-empty{padding:14px; font-size:13px; color:var(--muted); font-style:italic;}
+
+  .status{margin-top:15px; font-size:13.5px; line-height:1.6;}
+  .status a{color:var(--cantera); font-weight:600; text-decoration:none;}
+  .status a:hover{text-decoration:underline;}
+  .status.loading{color:var(--muted);}
+  .status.error{color:#a3342f;}
+
+  .planeacion-wrap{margin-top:34px; display:flex; flex-direction:column; gap:34px;}
+  .week-block h3{
+    font-family:'Public Sans',sans-serif; font-size:15px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.05em; padding-bottom:11px;
+    border-bottom:2px solid var(--cantera); margin-bottom:14px;
+  }
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{
+    text-align:left; text-transform:uppercase; font-size:10.5px;
+    letter-spacing:.08em; color:var(--muted); padding:8px 10px;
+    border-bottom:1px solid var(--piedra); font-weight:600;
+  }
+  td{padding:10px; border-bottom:1px solid var(--parchment);}
+  td.lead-id{font-family:'JetBrains Mono',monospace; color:var(--musgo); font-size:12px;}
+  .empty-week{color:var(--muted); font-style:italic; font-size:13.5px; padding:6px 0 0;}
+
+  @media (max-width:880px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%; height:auto; position:relative; padding:24px;}
+    .nav{margin-top:24px; flex-direction:row; flex-wrap:wrap;}
+    .sidebar-foot{display:none;}
+    .main{padding:32px 22px;}
+    .grid-2{grid-template-columns:1fr;}
+    .section-head h2{font-size:28px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- PIN GATE -->
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <p class="gate-eyebrow">Posada Señorial</p>
+    <h1 class="gate-title">Registro de acceso</h1>
+    <p class="gate-sub">Ingresa el PIN del equipo de eventos para entrar al panel.</p>
+    <input id="pinInput" class="gate-input" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="off">
+    <button id="gateBtn" class="btn btn-primary gate-btn">Entrar</button>
+    <p id="gateError" class="gate-error" hidden>PIN incorrecto. Intenta de nuevo.</p>
+    <div class="gate-salones">Aquiahuac · Xelhua · Bóveda · Trento · Cholula<br>Acozac · Luzcina · Remedios · Margaritas</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app" hidden>
+  <aside class="sidebar">
+    <div class="brand">
+      <p class="brand-eyebrow">Posada Señorial</p>
+      <h1 class="brand-title">Eventos</h1>
+    </div>
+    <nav class="nav">
+      <button class="nav-item active" data-section="programa">Programa</button>
+      <button class="nav-item" data-section="planeacion">Planeación</button>
+    </nav>
+    <div class="sidebar-foot">
+      <p>Salones &amp; jardines</p>
+      <p class="salones-list">Aquiahuac<br>Xelhua<br>Bóveda<br>Trento<br>Cholula<br>Acozac<br>Luzcina<br>Remedios<br>Margaritas</p>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- PROGRAMA -->
+    <section id="sec-programa" class="section">
+      <header class="section-head">
+        <p class="eyebrow">Generación</p>
+        <h2>Programa</h2>
+        <p class="section-sub">Arma la hoja con todos los eventos de la semana, o la de un solo evento cuando lo necesites suelto.</p>
+      </header>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Programa de la semana</h3>
+          <p class="card-text">Genera la hoja con todos los eventos de la semana en curso.</p>
+          <button id="btnSemana" class="btn btn-primary">Generar programa de la semana</button>
+          <div id="statusSemana" class="status"></div>
+        </div>
+
+        <div class="card">
+          <h3>Un solo evento</h3>
+          <p class="card-text">Busca un evento de la etapa Programa y genera su propia hoja editable.</p>
+          <label class="field-label" for="selectLead">Eventos en Programa</label>
+          <select id="selectLead" class="input">
+            <option value="">Selecciona un evento…</option>
+          </select>
+          <button id="btnIndividual" class="btn btn-primary" disabled>Generar hoja de este evento</button>
+          <div id="statusIndividual" class="status"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLANEACIÓN -->
+    <section id="sec-planeacion" class="section" hidden>
+      <header class="section-head">
+        <p class="eyebrow">Visibilidad</p>
+        <h2>Planeación</h2>
+        <p class="section-sub">Todos los eventos del pipeline, en cualquier etapa, que se celebrarán en las próximas 3 semanas.</p>
+      </header>
+      <button id="btnPlaneacion" class="btn btn-primary">Ver planeación</button>
+      <div id="planeacionWrap" class="planeacion-wrap"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const PIN = "6734";
+
+  const ENDPOINTS = {
+    semana:     'https://comunicacionesenlanube.app.n8n.cloud/webhook/generar-programa-hotel',
+    listar:     'https://comunicacionesenlanube.app.n8n.cloud/webhook/listar-leads-programa',
+    individual: 'https://comunicacionesenlanube.app.n8n.cloud/webhook/generar-evento-individual',
+    planeacion: 'https://comunicacionesenlanube.app.n8n.cloud/webhook/reporte-planeacion'
+  };
+
+  /* ---------- GATE ---------- */
+  const gate = document.getElementById('gate');
+  const app  = document.getElementById('app');
+
+  function openApp(){
+    gate.hidden = true;
+    app.hidden = false;
+    cargarLeads();
+  }
+
+  if (sessionStorage.getItem('eventos_admon_auth') === '1') {
+    openApp();
+  } else {
+    document.getElementById('pinInput').focus();
+  }
+
+  function tryPin(){
+    const val = document.getElementById('pinInput').value.trim();
+    if (val === PIN) {
+      sessionStorage.setItem('eventos_admon_auth', '1');
+      openApp();
+    } else {
+      document.getElementById('gateError').hidden = false;
+      const input = document.getElementById('pinInput');
+      input.value = '';
+      input.focus();
+    }
+  }
+  document.getElementById('gateBtn').addEventListener('click', tryPin);
+  document.getElementById('pinInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryPin();
+  });
+
+  /* ---------- NAV ---------- */
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.section').forEach(s => s.hidden = true);
+      document.getElementById('sec-' + btn.dataset.section).hidden = false;
+    });
+  });
+
+  /* ---------- PROGRAMA: SEMANA ---------- */
+  document.getElementById('btnSemana').addEventListener('click', async () => {
+    const st = document.getElementById('statusSemana');
+    st.className = 'status loading';
+    st.textContent = 'Generando…';
+    try {
+      const res = await fetch(ENDPOINTS.semana, { method: 'POST' });
+      const data = await res.json();
+      const url = data.url || data.link || (Array.isArray(data) ? (data[0] && data[0].url) : null);
+      if (url) {
+        st.className = 'status';
+        st.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener">Abrir programa de la semana →</a>';
+      } else {
+        st.className = 'status error';
+        st.textContent = 'No se recibió el link. Revisa el workflow.';
+      }
+    } catch (e) {
+      st.className = 'status error';
+      st.textContent = 'Error al generar. Intenta de nuevo.';
+    }
+  });
+
+  /* ---------- PROGRAMA: INDIVIDUAL ---------- */
+  let leadsCache = [];
+
+  const selectLead = document.getElementById('selectLead');
+  const btnIndividual = document.getElementById('btnIndividual');
+
+  async function cargarLeads(){
+    selectLead.innerHTML = '<option value="">Cargando eventos…</option>';
+    try {
+      const res = await fetch(ENDPOINTS.listar);
+      const data = await res.json();
+      leadsCache = Array.isArray(data) ? data : (data.leads || []);
+      renderSelect();
+    } catch (e) {
+      leadsCache = [];
+      selectLead.innerHTML = '<option value="">No se pudo cargar la lista</option>';
+    }
+  }
+
+  function renderSelect(){
+    if (!leadsCache.length) {
+      selectLead.innerHTML = '<option value="">No hay eventos en Programa</option>';
+      return;
+    }
+    const opciones = leadsCache.map(l => {
+      const id = l.leadId || l.id;
+      const titular = l.titular || l.nombre || 'Sin nombre';
+      const meta = [l.salon, l.tipo || l.tipoEvento, l.fecha || l.fechaEvento]
+        .filter(Boolean).join(' · ');
+      const texto = meta ? (titular + ' — ' + meta) : titular;
+      return '<option value="' + id + '">' + texto + ' (Lead #' + id + ')</option>';
+    }).join('');
+    selectLead.innerHTML = '<option value="">Selecciona un evento…</option>' + opciones;
+  }
+
+  selectLead.addEventListener('change', () => {
+    btnIndividual.disabled = !selectLead.value;
+  });
+
+  btnIndividual.addEventListener('click', async () => {
+    const selectedLeadId = selectLead.value;
+    if (!selectedLeadId) return;
+    const st = document.getElementById('statusIndividual');
+    st.className = 'status loading';
+    st.textContent = 'Generando…';
+    try {
+      const res = await fetch(ENDPOINTS.individual, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: selectedLeadId })
+      });
+      const data = await res.json();
+      const url = data.url || data.link;
+      if (url) {
+        st.className = 'status';
+        st.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener">Abrir hoja del evento →</a>';
+      } else {
+        st.className = 'status error';
+        st.textContent = 'No se recibió el link. Revisa el workflow.';
+      }
+    } catch (e) {
+      st.className = 'status error';
+      st.textContent = 'Error al generar. Intenta de nuevo.';
+    }
+  });
+
+  /* ---------- PLANEACIÓN ---------- */
+  document.getElementById('btnPlaneacion').addEventListener('click', cargarPlaneacion);
+
+  async function cargarPlaneacion(){
+    const wrap = document.getElementById('planeacionWrap');
+    wrap.innerHTML = '<p class="status loading">Cargando…</p>';
+    try {
+      const res = await fetch(ENDPOINTS.planeacion);
+      const data = await res.json();
+      const semanas = data.semanas || data.weeks || (Array.isArray(data) ? data : []);
+
+      if (!semanas.length) {
+        wrap.innerHTML = '<p class="empty-week">No se encontró información de planeación.</p>';
+        return;
+      }
+
+      wrap.innerHTML = semanas.map(sem => {
+        const label = sem.label || sem.titulo || ('Semana del ' + (sem.inicio || ''));
+        const eventos = sem.eventos || sem.leads || [];
+        let body;
+        if (eventos.length) {
+          const filas = eventos.map(ev => {
+            const lead = '#' + (ev.lead || ev.leadId || ev.id || '');
+            const titular = ev.titular || ev.nombre || '';
+            const fecha = ev.fecha || ev.fechaEvento || '';
+            const etapa = ev.etapa || ev.etapaNombre || '';
+            return '<tr><td class="lead-id">' + lead + '</td><td>' + titular + '</td><td>' + fecha + '</td><td>' + etapa + '</td></tr>';
+          }).join('');
+          body = '<table><thead><tr><th>Lead</th><th>Titular</th><th>Fecha</th><th>Etapa</th></tr></thead><tbody>' + filas + '</tbody></table>';
+        } else {
+          body = '<p class="empty-week">Sin eventos en esta semana.</p>';
+        }
+        return '<div class="week-block"><h3>' + label + '</h3>' + body + '</div>';
+      }).join('');
+    } catch (e) {
+      wrap.innerHTML = '<p class="status error">Error al cargar la planeación. Intenta de nuevo.</p>';
+    }
+  }
+</script>
+</body>
+</html>
