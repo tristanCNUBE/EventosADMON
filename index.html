@@ -126,6 +126,16 @@
   }
   .input:focus{outline:none; border-color:var(--cantera);}
 
+  .field-label{
+    display:block; text-transform:uppercase; font-size:11px; letter-spacing:.08em;
+    color:var(--muted); font-weight:600; margin-bottom:8px;
+  }
+  select.input{
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b6053' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center; padding-right:36px;
+    cursor:pointer;
+  }
   .lead-list{
     max-height:230px; overflow-y:auto; margin-bottom:14px;
     border:1px solid var(--piedra); border-radius:5px; display:none;
@@ -223,9 +233,11 @@
 
         <div class="card">
           <h3>Un solo evento</h3>
-          <p class="card-text">Busca por nombre del cliente, salón, tipo de evento o número de lead.</p>
-          <input id="buscarLead" class="input" type="text" placeholder="Buscar evento…" autocomplete="off">
-          <div id="listaLeads" class="lead-list"></div>
+          <p class="card-text">Busca un evento de la etapa Programa y genera su propia hoja editable.</p>
+          <label class="field-label" for="selectLead">Eventos en Programa</label>
+          <select id="selectLead" class="input">
+            <option value="">Selecciona un evento…</option>
+          </select>
           <button id="btnIndividual" class="btn btn-primary" disabled>Generar hoja de este evento</button>
           <div id="statusIndividual" class="status"></div>
         </div>
@@ -323,77 +335,45 @@
 
   /* ---------- PROGRAMA: INDIVIDUAL ---------- */
   let leadsCache = [];
-  let selectedLeadId = null;
+
+  const selectLead = document.getElementById('selectLead');
+  const btnIndividual = document.getElementById('btnIndividual');
 
   async function cargarLeads(){
+    selectLead.innerHTML = '<option value="">Cargando eventos…</option>';
     try {
       const res = await fetch(ENDPOINTS.listar);
       const data = await res.json();
       leadsCache = Array.isArray(data) ? data : (data.leads || []);
+      renderSelect();
     } catch (e) {
       leadsCache = [];
+      selectLead.innerHTML = '<option value="">No se pudo cargar la lista</option>';
     }
   }
 
-  const buscarInput = document.getElementById('buscarLead');
-  const listaEl = document.getElementById('listaLeads');
-  const btnIndividual = document.getElementById('btnIndividual');
-
-  buscarInput.addEventListener('input', () => {
-    selectedLeadId = null;
-    btnIndividual.disabled = true;
-    renderLista();
-  });
-  buscarInput.addEventListener('focus', renderLista);
-
-  function renderLista(){
-    const q = buscarInput.value.trim().toLowerCase();
-    if (!q) { listaEl.classList.remove('show'); listaEl.innerHTML = ''; return; }
-
-    const filtrados = leadsCache.filter(l => {
-      const campos = [l.titular, l.nombre, l.salon, l.tipo, l.tipoEvento, String(l.leadId || l.id || '')]
-        .filter(Boolean).join(' ').toLowerCase();
-      return campos.includes(q);
-    }).slice(0, 30);
-
-    if (!filtrados.length) {
-      listaEl.innerHTML = '<div class="lead-empty">Sin resultados.</div>';
-      listaEl.classList.add('show');
+  function renderSelect(){
+    if (!leadsCache.length) {
+      selectLead.innerHTML = '<option value="">No hay eventos en Programa</option>';
       return;
     }
-
-    listaEl.innerHTML = filtrados.map(l => {
+    const opciones = leadsCache.map(l => {
       const id = l.leadId || l.id;
       const titular = l.titular || l.nombre || 'Sin nombre';
-      const meta = [l.salon, l.tipo || l.tipoEvento, l.fecha || l.fechaEvento, 'Lead #' + id]
+      const meta = [l.salon, l.tipo || l.tipoEvento, l.fecha || l.fechaEvento]
         .filter(Boolean).join(' · ');
-      return '<div class="lead-item" data-id="' + id + '">' +
-               '<div class="li-titular">' + titular + '</div>' +
-               '<div class="li-meta">' + meta + '</div>' +
-             '</div>';
+      const texto = meta ? (titular + ' — ' + meta) : titular;
+      return '<option value="' + id + '">' + texto + ' (Lead #' + id + ')</option>';
     }).join('');
-    listaEl.classList.add('show');
-
-    listaEl.querySelectorAll('.lead-item').forEach(item => {
-      item.addEventListener('click', () => {
-        listaEl.querySelectorAll('.lead-item').forEach(i => i.classList.remove('selected'));
-        item.classList.add('selected');
-        selectedLeadId = item.dataset.id;
-        btnIndividual.disabled = false;
-        buscarInput.value = item.querySelector('.li-titular').textContent;
-        listaEl.classList.remove('show');
-      });
-    });
+    selectLead.innerHTML = '<option value="">Selecciona un evento…</option>' + opciones;
   }
 
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.card') ) return;
-    if (!e.target.closest('#buscarLead') && !e.target.closest('#listaLeads')) {
-      listaEl.classList.remove('show');
-    }
+  selectLead.addEventListener('change', () => {
+    btnIndividual.disabled = !selectLead.value;
   });
 
   btnIndividual.addEventListener('click', async () => {
+    const selectedLeadId = selectLead.value;
     if (!selectedLeadId) return;
     const st = document.getElementById('statusIndividual');
     st.className = 'status loading';
