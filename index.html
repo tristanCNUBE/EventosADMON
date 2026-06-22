@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- EventosADMON v3 | 2026-06-22 | fix: formato de fecha legible en tabla de planeación; mix dropdown+nuevo diseño en evento individual -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -399,6 +400,37 @@
     }
   });
 
+  /* ---------- HELPERS ---------- */
+  const DIAS  = ['dom','lun','mar','mié','jue','vie','sáb'];
+  const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  function formatFecha(raw){
+    if (!raw) return '—';
+    // Acepta ISO string, timestamp Unix (número) o cadena de fecha
+    let d;
+    if (typeof raw === 'number') {
+      // Unix timestamp — puede venir en segundos (Kommo) o ms
+      d = raw > 1e10 ? new Date(raw) : new Date(raw * 1000);
+    } else {
+      d = new Date(raw);
+    }
+    if (isNaN(d)) return raw; // Si no parsea, regresa el valor crudo
+
+    // Ajuste a México (UTC-6 / UTC-5 en verano). Usamos offset fijo -6 como base
+    // y ajustamos si el offset real del browser coincide mejor.
+    const offsetMs = -6 * 60 * 60 * 1000;
+    const local = new Date(d.getTime() + offsetMs);
+
+    const dia  = DIAS[local.getUTCDay()];
+    const dd   = local.getUTCDate();
+    const mes  = MESES[local.getUTCMonth()];
+    const hh   = String(local.getUTCHours()).padStart(2,'0');
+    const mm   = String(local.getUTCMinutes()).padStart(2,'0');
+    const hora = (hh === '00' && mm === '00') ? '' : (' · ' + hh + ':' + mm);
+
+    return dia + ' ' + dd + ' ' + mes + hora;
+  }
+
   /* ---------- PLANEACIÓN ---------- */
   document.getElementById('btnPlaneacion').addEventListener('click', cargarPlaneacion);
 
@@ -421,10 +453,10 @@
         let body;
         if (eventos.length) {
           const filas = eventos.map(ev => {
-            const lead = '#' + (ev.lead || ev.leadId || ev.id || '');
+            const lead    = '#' + (ev.lead || ev.leadId || ev.id || '');
             const titular = ev.titular || ev.nombre || '';
-            const fecha = ev.fecha || ev.fechaEvento || '';
-            const etapa = ev.etapa || ev.etapaNombre || '';
+            const fecha   = formatFecha(ev.fecha || ev.fechaEvento || '');
+            const etapa   = ev.etapa || ev.etapaNombre || '';
             return '<tr><td class="lead-id">' + lead + '</td><td>' + titular + '</td><td>' + fecha + '</td><td>' + etapa + '</td></tr>';
           }).join('');
           body = '<table><thead><tr><th>Lead</th><th>Titular</th><th>Fecha</th><th>Etapa</th></tr></thead><tbody>' + filas + '</tbody></table>';
