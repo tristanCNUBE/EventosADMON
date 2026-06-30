@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- EventosADMON v6 | 2026-06-26 | feat: columna Salón + total de eventos por día en Planeación -->
+<!-- EventosADMON v7 | 2026-06-26 | feat: botón de recarga manual para el dropdown de Un solo evento -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -127,6 +127,16 @@
   }
   .input:focus{outline:none; border-color:var(--cantera);}
 
+  .field-label-row{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+  }
+  .field-label-row .field-label{ margin-bottom:0; }
+  .link-btn{
+    all:unset; cursor:pointer; font-size:11.5px; font-weight:600;
+    color:var(--cantera); padding:2px 4px; border-radius:3px;
+  }
+  .link-btn:hover{ color:var(--cantera-dark); text-decoration:underline; }
+  .link-btn:disabled{ color:var(--piedra); cursor:not-allowed; text-decoration:none; }
   .field-label{
     display:block; text-transform:uppercase; font-size:11px; letter-spacing:.08em;
     color:var(--muted); font-weight:600; margin-bottom:8px;
@@ -240,9 +250,12 @@
         <div class="card">
           <h3>Un solo evento</h3>
           <p class="card-text">Busca un evento de la etapa Programa y genera su propia hoja editable.</p>
-          <label class="field-label" for="selectLead">Eventos en Programa</label>
+          <div class="field-label-row">
+            <label class="field-label" for="selectLead">Eventos en Programa</label>
+            <button id="btnRecargarLeads" class="link-btn" type="button" title="Recargar lista de eventos">⟳ Recargar</button>
+          </div>
           <select id="selectLead" class="input">
-            <option value="">Selecciona un evento…</option>
+            <option value="">Cargando eventos…</option>
           </select>
           <button id="btnIndividual" class="btn btn-primary" disabled>Generar hoja de este evento</button>
           <div id="statusIndividual" class="status"></div>
@@ -342,21 +355,32 @@
   /* ---------- PROGRAMA: INDIVIDUAL ---------- */
   let leadsCache = [];
 
-  const selectLead = document.getElementById('selectLead');
-  const btnIndividual = document.getElementById('btnIndividual');
+  const selectLead       = document.getElementById('selectLead');
+  const btnIndividual    = document.getElementById('btnIndividual');
+  const btnRecargarLeads = document.getElementById('btnRecargarLeads');
 
   async function cargarLeads(){
+    btnRecargarLeads.disabled = true;
+    btnRecargarLeads.textContent = '⟳ Cargando…';
     selectLead.innerHTML = '<option value="">Cargando eventos…</option>';
+    btnIndividual.disabled = true;
+
     try {
       const res = await fetch(ENDPOINTS.listar);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       leadsCache = Array.isArray(data) ? data : (data.leads || []);
       renderSelect();
     } catch (e) {
       leadsCache = [];
-      selectLead.innerHTML = '<option value="">No se pudo cargar la lista</option>';
+      selectLead.innerHTML = '<option value="">⚠ No se pudo cargar — dale a Recargar</option>';
+    } finally {
+      btnRecargarLeads.disabled = false;
+      btnRecargarLeads.textContent = '⟳ Recargar';
     }
   }
+
+  btnRecargarLeads.addEventListener('click', cargarLeads);
 
   function renderSelect(){
     if (!leadsCache.length) {
