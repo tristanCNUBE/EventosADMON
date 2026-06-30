@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- EventosADMON v5 | 2026-06-22 | fix: hora UTC sin offset para timestamps numéricos (Kommo guarda hora local como UTC) -->
+<!-- EventosADMON v6 | 2026-06-26 | feat: columna Salón + total de eventos por día en Planeación -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -170,6 +170,11 @@
   td{padding:10px; border-bottom:1px solid var(--parchment);}
   td.lead-id{font-family:'JetBrains Mono',monospace; color:var(--musgo); font-size:12px;}
   .empty-week{color:var(--muted); font-style:italic; font-size:13.5px; padding:6px 0 0;}
+  tr.dia-total td{
+    background:var(--parchment); color:var(--cantera-dark); font-weight:700;
+    font-size:12px; text-transform:uppercase; letter-spacing:.05em;
+    padding:9px 10px; border-bottom:2px solid var(--piedra);
+  }
 
   @media (max-width:880px){
     .app{flex-direction:column;}
@@ -434,6 +439,17 @@
   /* ---------- PLANEACIÓN ---------- */
   document.getElementById('btnPlaneacion').addEventListener('click', cargarPlaneacion);
 
+  function soloFecha(raw){
+    // Extrae solo la parte de fecha (sin hora) para agrupar por día
+    if (!raw) return '';
+    if (typeof raw === 'number') {
+      const d = new Date(raw > 1e10 ? raw : raw * 1000);
+      return d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDate();
+    }
+    const m = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? (m[1] + '-' + m[2] + '-' + m[3]) : String(raw);
+  }
+
   async function cargarPlaneacion(){
     const wrap = document.getElementById('planeacionWrap');
     wrap.innerHTML = '<p class="status loading">Cargando…</p>';
@@ -452,14 +468,35 @@
         const eventos = sem.eventos || sem.leads || [];
         let body;
         if (eventos.length) {
-          const filas = eventos.map(ev => {
+          let filas = '';
+          let diaActual = null;
+          let bufferFilasDelDia = [];
+
+          const volcarDia = () => {
+            if (!bufferFilasDelDia.length) return;
+            filas += bufferFilasDelDia.join('');
+            const total = bufferFilasDelDia.length;
+            filas += '<tr class="dia-total"><td colspan="5">Total del día: ' + total + (total === 1 ? ' evento' : ' eventos') + '</td></tr>';
+            bufferFilasDelDia = [];
+          };
+
+          eventos.forEach(ev => {
+            const fechaRaw = ev.fecha || ev.fechaEvento || '';
+            const diaKey   = soloFecha(fechaRaw);
+
+            if (diaActual !== null && diaKey !== diaActual) volcarDia();
+            diaActual = diaKey;
+
             const lead    = '#' + (ev.lead || ev.leadId || ev.id || '');
             const titular = ev.titular || ev.nombre || '';
-            const fecha   = formatFecha(ev.fecha || ev.fechaEvento || '');
+            const fecha   = formatFecha(fechaRaw);
+            const salon   = ev.salon || '';
             const etapa   = ev.etapa || ev.etapaNombre || '';
-            return '<tr><td class="lead-id">' + lead + '</td><td>' + titular + '</td><td>' + fecha + '</td><td>' + etapa + '</td></tr>';
-          }).join('');
-          body = '<table><thead><tr><th>Lead</th><th>Titular</th><th>Fecha</th><th>Etapa</th></tr></thead><tbody>' + filas + '</tbody></table>';
+            bufferFilasDelDia.push('<tr><td class="lead-id">' + lead + '</td><td>' + titular + '</td><td>' + fecha + '</td><td>' + salon + '</td><td>' + etapa + '</td></tr>');
+          });
+          volcarDia();
+
+          body = '<table><thead><tr><th>Lead</th><th>Titular</th><th>Fecha</th><th>Salón</th><th>Etapa</th></tr></thead><tbody>' + filas + '</tbody></table>';
         } else {
           body = '<p class="empty-week">Sin eventos en esta semana.</p>';
         }
